@@ -16,14 +16,19 @@ import { Separator } from 'components/separator';
 import clsx from 'clsx';
 
 import styles from './ArticleParamsForm.module.scss';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, forwardRef } from 'react';
 
 type ArticleParamsFormProps = {
 	onApplyChanges: (styles: ArticleStateType) => void;
 	onReset: () => void;
+	isOpen: boolean;
+	setIsOpen: (value: boolean) => void;
 };
 
-export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
+export const ArticleParamsForm = forwardRef<
+	HTMLDivElement,
+	ArticleParamsFormProps
+>((props, ref) => {
 	const [fontFamilyOption, setFontType] = useState(
 		defaultArticleState.fontFamilyOption
 	);
@@ -37,7 +42,14 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 	const [contentWidth, setContentWidth] = useState(
 		defaultArticleState.contentWidth
 	);
-	const [isOpen, setIsOpen] = useState(false);
+
+	const resetForm = () => {
+		setFontType(defaultArticleState.fontFamilyOption);
+		setFontSize(defaultArticleState.fontSizeOption);
+		setFontColor(defaultArticleState.fontColor);
+		setBackgroundColor(defaultArticleState.backgroundColor);
+		setContentWidth(defaultArticleState.contentWidth);
+	};
 
 	const applyChanges = (evt: FormEvent) => {
 		evt.preventDefault();
@@ -51,18 +63,23 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 	};
 
 	return (
-		<>
+		<div ref={ref}>
 			<ArrowButton
 				onClick={() => {
-					setIsOpen(!isOpen);
+					props.setIsOpen(!props.isOpen);
 				}}
-				isOpen={isOpen}
+				isOpen={props.isOpen}
 			/>
 			<aside
-				className={clsx(styles.container, { [styles.container_open]: isOpen })}>
+				className={clsx(styles.container, {
+					[styles.container_open]: props.isOpen,
+				})}>
 				<form
 					onSubmit={applyChanges}
-					onReset={props.onReset}
+					onReset={() => {
+						props.onReset();
+						resetForm();
+					}}
 					className={styles.form}>
 					<Text weight={800} size={31}>
 						Задайте параметры
@@ -105,6 +122,8 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 					</div>
 				</form>
 			</aside>
-		</>
+		</div>
 	);
-};
+});
+
+ArticleParamsForm.displayName = 'ArticleParamsForm';
