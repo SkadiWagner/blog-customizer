@@ -1,129 +1,143 @@
 import { ArrowButton } from 'components/arrow-button';
 import { Button } from 'components/button';
-import { Text } from 'components/text';
 import { Select } from '../select';
+import { RadioGroup } from '../radio-group';
+import { Text } from '../text';
+
+import styles from './ArticleParamsForm.module.scss';
+import { useState, useRef } from 'react';
+import { useCloseByOverlay } from 'components/hooks/useCloseByOverlay';
+
 import {
 	fontFamilyOptions,
-	fontSizeOptions,
 	fontColors,
 	backgroundColors,
 	contentWidthArr,
-	defaultArticleState,
+	fontSizeOptions,
+	OptionType,
 	ArticleStateType,
+	defaultArticleState,
 } from 'src/constants/articleProps';
-import { RadioGroup } from 'components/radio-group';
-import { Separator } from 'components/separator';
-import clsx from 'clsx';
+import { Separator } from '../separator';
 
-import styles from './ArticleParamsForm.module.scss';
-import { FormEvent, useState, forwardRef } from 'react';
+interface ArticleParamsFormProps {
+	onApplyChanges: (selectedValues: ArticleStateType) => void;
+}
 
-type ArticleParamsFormProps = {
-	onApplyChanges: (styles: ArticleStateType) => void;
-	onReset: () => void;
-	isOpen: boolean;
-	setIsOpen: (value: boolean) => void;
-};
+export const ArticleParamsForm = ({
+	onApplyChanges,
+}: ArticleParamsFormProps) => {
+	const [isOpen, setIsOpen] = useState(false);
+	const [selectedValue, setSelectedValue] = useState({
+		font: defaultArticleState.fontFamilyOption,
+		size: defaultArticleState.fontSizeOption,
+		fontColor: defaultArticleState.fontColor,
+		bgColor: defaultArticleState.backgroundColor,
+		width: defaultArticleState.contentWidth,
+	});
 
-export const ArticleParamsForm = forwardRef<
-	HTMLDivElement,
-	ArticleParamsFormProps
->((props, ref) => {
-	const [fontFamilyOption, setFontType] = useState(
-		defaultArticleState.fontFamilyOption
-	);
-	const [fontSizeOption, setFontSize] = useState(
-		defaultArticleState.fontSizeOption
-	);
-	const [fontColor, setFontColor] = useState(defaultArticleState.fontColor);
-	const [backgroundColor, setBackgroundColor] = useState(
-		defaultArticleState.backgroundColor
-	);
-	const [contentWidth, setContentWidth] = useState(
-		defaultArticleState.contentWidth
-	);
+	const formRef = useRef<HTMLDivElement | null>(null);
 
-	const resetForm = () => {
-		setFontType(defaultArticleState.fontFamilyOption);
-		setFontSize(defaultArticleState.fontSizeOption);
-		setFontColor(defaultArticleState.fontColor);
-		setBackgroundColor(defaultArticleState.backgroundColor);
-		setContentWidth(defaultArticleState.contentWidth);
+	const changeOpenState = () => {
+		setIsOpen(!isOpen);
 	};
 
-	const applyChanges = (evt: FormEvent) => {
-		evt.preventDefault();
-		props.onApplyChanges({
-			fontFamilyOption,
-			fontSizeOption,
-			fontColor,
-			backgroundColor,
-			contentWidth,
+	useCloseByOverlay({
+		optionRef: formRef,
+		onChange: changeOpenState,
+		state: isOpen,
+	});
+
+	const handleSettingsReset = () => {
+		setSelectedValue({
+			font: defaultArticleState.fontFamilyOption,
+			size: defaultArticleState.fontSizeOption,
+			fontColor: defaultArticleState.fontColor,
+			bgColor: defaultArticleState.backgroundColor,
+			width: defaultArticleState.contentWidth,
 		});
 	};
 
-	return (
-		<div ref={ref}>
-			<ArrowButton
-				onClick={() => {
-					props.setIsOpen(!props.isOpen);
-				}}
-				isOpen={props.isOpen}
-			/>
-			<aside
-				className={clsx(styles.container, {
-					[styles.container_open]: props.isOpen,
-				})}>
-				<form
-					onSubmit={applyChanges}
-					onReset={() => {
-						props.onReset();
-						resetForm();
-					}}
-					className={styles.form}>
-					<Text weight={800} size={31}>
-						Задайте параметры
-					</Text>
-					<Select
-						title='шрифт'
-						options={fontFamilyOptions}
-						selected={fontFamilyOption}
-						onChange={setFontType}
-					/>
-					<RadioGroup
-						name='размер да'
-						title='размер шрифта'
-						options={fontSizeOptions}
-						selected={fontSizeOption}
-						onChange={setFontSize}
-					/>
-					<Select
-						title='цвет шрифта'
-						options={fontColors}
-						selected={fontColor}
-						onChange={setFontColor}
-					/>
-					<Separator />
-					<Select
-						title='цвет фона'
-						options={backgroundColors}
-						selected={backgroundColor}
-						onChange={setBackgroundColor}
-					/>
-					<Select
-						title='ширина контента'
-						options={contentWidthArr}
-						selected={contentWidth}
-						onChange={setContentWidth}
-					/>
-					<div className={styles.bottomContainer}>
-						<Button title='Сбросить' type='reset' />
-						<Button title='Применить' type='submit' />
-					</div>
-				</form>
-			</aside>
-		</div>
-	);
-});
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		const currentValues = {
+			fontFamilyOption: selectedValue.font,
+			fontColor: selectedValue.fontColor,
+			backgroundColor: selectedValue.bgColor,
+			contentWidth: selectedValue.width,
+			fontSizeOption: selectedValue.size,
+		};
+		onApplyChanges(currentValues);
+	};
 
-ArticleParamsForm.displayName = 'ArticleParamsForm';
+	const handleSelectChange = (
+		optionType: string,
+		selectedOption: OptionType
+	) => {
+		setSelectedValue((prevOptions) => ({
+			...prevOptions,
+			[optionType]: selectedOption,
+		}));
+	};
+
+	return (
+		<>
+			<div ref={formRef}>
+				<ArrowButton onClick={changeOpenState} isOpen={isOpen} />
+				<aside
+					className={`${styles.container} ${
+						isOpen ? styles.container_open : ''
+					}`}>
+					<form className={styles.form} onSubmit={handleSubmit}>
+						<Text as='h2' weight={800} size={25} uppercase>
+							Задайте параметры
+						</Text>
+						<Select
+							title='Шрифт'
+							placeholder='Выберите шрифт'
+							options={fontFamilyOptions}
+							selected={selectedValue.font}
+							onChange={(font) => handleSelectChange('font', font)}
+						/>
+						<RadioGroup
+							title={'Размер шрифта'}
+							name={'str'}
+							options={fontSizeOptions}
+							selected={selectedValue.size}
+							onChange={(size) => handleSelectChange('size', size)}
+						/>
+						<Select
+							title='Цвет шрифта'
+							options={fontColors}
+							selected={selectedValue.fontColor}
+							onChange={(fontColor) =>
+								handleSelectChange('fontColor', fontColor)
+							}
+						/>
+						<Separator />
+						<Select
+							title='Цвет фона'
+							options={backgroundColors}
+							selected={selectedValue.bgColor}
+							onChange={(bgColor) => handleSelectChange('bgColor', bgColor)}
+						/>
+						<Select
+							title='Ширина контента'
+							options={contentWidthArr}
+							selected={selectedValue.width}
+							onChange={(width) => handleSelectChange('width', width)}
+						/>
+						<div className={styles.bottomContainer}>
+							<Button
+								title='Сбросить'
+								type='submit'
+								onClick={handleSettingsReset}
+							/>
+							<Button title='Применить' type='submit' />
+						</div>
+					</form>
+				</aside>
+			</div>
+		</>
+	);
+};

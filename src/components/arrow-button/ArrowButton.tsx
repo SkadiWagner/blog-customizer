@@ -1,6 +1,9 @@
 import clsx from 'clsx';
+
 import arrow from 'src/images/arrow.svg';
+
 import styles from './ArrowButton.module.scss';
+
 export type OnClick = () => void;
 
 type ArrowButtonProps = {
